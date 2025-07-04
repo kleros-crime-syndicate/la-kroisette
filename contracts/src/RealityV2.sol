@@ -11,7 +11,6 @@
 pragma solidity 0.8.24;
 
 import {IArbitrableV2, IArbitratorV2} from "@kleros/kleros-v2-contracts/arbitration/interfaces/IArbitrableV2.sol";
-import {EvidenceModule} from "@kleros/kleros-v2-contracts/arbitration/evidence/EvidenceModule.sol";
 import {IDisputeTemplateRegistry} from "@kleros/kleros-v2-contracts/arbitration/interfaces/IDisputeTemplateRegistry.sol";
 import {IRealitio} from "./interfaces/IRealitio.sol";
 import {IRealitioArbitrator} from "./interfaces/IRealitioArbitrator.sol";
@@ -42,7 +41,6 @@ contract RealitioProxyV2 is IRealitioArbitrator, IArbitrableV2 {
     struct ArbitrationParams {
         IArbitratorV2 arbitrator; // The arbitrator trusted to solve disputes for this request.
         bytes arbitratorExtraData; // The extra data for the trusted arbitrator of this request.
-        EvidenceModule evidenceModule; // The evidence module for the arbitrator.
     }
 
     // ************************************* //
@@ -80,7 +78,6 @@ contract RealitioProxyV2 is IRealitioArbitrator, IArbitrableV2 {
     /// @param _metadata The metadata required for RealitioArbitrator.
     /// @param _arbitrator The address of the ERC792 arbitrator.
     /// @param _arbitratorExtraData The extra data used to raise a dispute in the ERC792 arbitrator.
-    /// @param _evidenceModule The evidence contract for the arbitrator.
     /// @param _templateRegistry The dispute template registry.
     /// @param _templateData The dispute template data.
     /// @param _templateDataMappings The dispute template data mappings.
@@ -90,7 +87,6 @@ contract RealitioProxyV2 is IRealitioArbitrator, IArbitrableV2 {
         string memory _metadata,
         IArbitratorV2 _arbitrator,
         bytes memory _arbitratorExtraData,
-        EvidenceModule _evidenceModule,
         IDisputeTemplateRegistry _templateRegistry,
         string memory _templateData,
         string memory _templateDataMappings
@@ -103,8 +99,7 @@ contract RealitioProxyV2 is IRealitioArbitrator, IArbitrableV2 {
         arbitrationParamsChanges.push(
             ArbitrationParams({
                 arbitrator: _arbitrator,
-                arbitratorExtraData: _arbitratorExtraData,
-                evidenceModule: _evidenceModule
+                arbitratorExtraData: _arbitratorExtraData
             })
         );
     }
@@ -122,17 +117,14 @@ contract RealitioProxyV2 is IRealitioArbitrator, IArbitrableV2 {
     /// @notice Changes the params related to arbitration.
     /// @param _arbitrator Arbitrator to resolve potential disputes. The arbitrator is trusted to support appeal periods and not reenter.
     /// @param _arbitratorExtraData Extra data for the trusted arbitrator contract.
-    /// @param _evidenceModule The evidence module for the arbitrator.
     function changeArbitrationParams(
         IArbitratorV2 _arbitrator,
-        bytes calldata _arbitratorExtraData,
-        EvidenceModule _evidenceModule
+        bytes calldata _arbitratorExtraData
     ) external onlyGovernor {
         arbitrationParamsChanges.push(
             ArbitrationParams({
                 arbitrator: _arbitrator,
-                arbitratorExtraData: _arbitratorExtraData,
-                evidenceModule: _evidenceModule
+                arbitratorExtraData: _arbitratorExtraData
             })
         );
     }

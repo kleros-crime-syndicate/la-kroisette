@@ -10,7 +10,6 @@ Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kl
 - **v2**: Uses `IArbitratorV2` and `IArbitrableV2`
 
 ### New Components in v2
-- **EvidenceModule**: Handles evidence submission and management
 - **IDisputeTemplateRegistry**: Manages dispute templates for structured dispute data
 - **Enhanced Parameter Management**: More sophisticated arbitration parameter handling
 
@@ -25,28 +24,24 @@ Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kl
 #### 1.1 Interface Updates
 - [ ] Replace `IArbitrator` with `IArbitratorV2`
 - [ ] Replace `IDisputeResolver` with `IArbitrableV2`
-- [ ] Import `EvidenceModule` from Kleros v2 contracts
 - [ ] Import `IDisputeTemplateRegistry` from Kleros v2 contracts
 
 #### 1.2 Storage Updates
-- [ ] Add `EvidenceModule public evidenceModule`
 - [ ] Add `IDisputeTemplateRegistry public templateRegistry`
 - [ ] Add `uint256 public templateId`
 - [ ] Add `ArbitrationParams` struct similar to RealityV2.sol
 - [ ] Add `arbitrationParamsChanges` array for parameter versioning
 
 #### 1.3 Constructor Updates
-- [ ] Add `EvidenceModule _evidenceModule` parameter
 - [ ] Add `IDisputeTemplateRegistry _templateRegistry` parameter
 - [ ] Add `string memory _templateData` parameter
 - [ ] Add `string memory _templateDataMappings` parameter
 - [ ] Initialize dispute template in constructor
 
 #### 1.4 Method Updates
-- [ ] Update `createDispute` call to use v2 interface
+- [ ] Add `createDispute` call to use v2 interface
 - [ ] Add `rule` method implementation for `IArbitrableV2`
 - [ ] Update dispute creation to emit `DisputeRequest` event
-- [ ] Add evidence submission methods if needed
 
 #### 1.5 Governance Methods
 - [ ] Add `changeArbitrationParams` method
@@ -63,7 +58,6 @@ Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kl
 #### 2.2 Message Protocol Updates
 - [ ] Review cross-chain message format compatibility
 - [ ] Update message handlers to support v2 dispute data
-- [ ] Add support for evidence module interactions if needed
 
 #### 2.3 Storage Updates
 - [ ] Add fields to track v2-specific arbitration parameters
@@ -76,10 +70,7 @@ Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kl
 - [ ] Update message tags if new message types are needed
 - [ ] Verify backward compatibility during transition period
 
-#### 3.2 Evidence Handling
-- [ ] Determine if evidence needs to be bridged cross-chain
-- [ ] Implement evidence relay mechanism if required
-- [ ] Add evidence-related message types to LayerZero protocol
+
 
 ### 4. Error Handling and Events
 
@@ -98,13 +89,11 @@ Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kl
 #### 5.1 Unit Tests
 - [ ] Test v2 dispute creation flow
 - [ ] Test cross-chain message handling
-- [ ] Test evidence submission (if implemented)
 - [ ] Test governance functions
 
 #### 5.2 Integration Tests
 - [ ] Test full cross-chain arbitration flow
 - [ ] Test dispute resolution and ruling relay
-- [ ] Test appeal mechanism (if applicable)
 
 #### 5.3 Migration Tests
 - [ ] Test upgrade path from v1 to v2
@@ -131,9 +120,8 @@ Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kl
 3. Core arbitration flow compatibility
 
 ### Phase 2: Advanced Features (Medium Priority)
-1. Evidence module integration
-2. Dispute template management
-3. Enhanced governance functions
+1. Dispute template management
+2. Enhanced governance functions
 
 ### Phase 3: Optimization (Low Priority)
 1. Gas optimization
@@ -145,7 +133,6 @@ Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kl
 ### High Risk Items
 - Cross-chain message format changes
 - Arbitration parameter migration
-- Evidence handling complexity
 
 ### Medium Risk Items
 - Event emission changes
