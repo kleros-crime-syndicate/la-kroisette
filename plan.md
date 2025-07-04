@@ -1,167 +1,285 @@
-# Kleros v2 Upgrade Plan for LayerZero Proxy Contracts
+# Kleros v2 Upgrade Plan for LayerZero Contracts
 
 ## Overview
-Upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` to support Kleros v2 arbitration while maintaining cross-chain functionality via LayerZero.
 
-## Key Differences: Kleros v1 vs v2
+This plan outlines the steps needed to upgrade `RealitioForeignProxyLZ.sol` and `RealitioHomeProxyLZ.sol` from Kleros v1 to Kleros v2. The upgrade involves significant changes to interfaces, dispute creation, and removes the complex appeal/evidence system that was handled in v1.
 
-### Interface Changes
-- **v1**: Uses `IArbitrator` and `IDisputeResolver`
-- **v2**: Uses `IArbitratorV2` and `IArbitrableV2`
+## Key Differences Between v1 and v2
 
-### New Components in v2
-- **IDisputeTemplateRegistry**: Manages dispute templates for structured dispute data
-- **Enhanced Parameter Management**: More sophisticated arbitration parameter handling
+### 1. Interface Changes
+- **v1**: `IArbitrator` → **v2**: `IArbitratorV2`
+- **v1**: `IArbitrable` → **v2**: `IArbitrableV2`
+- **v1**: `IDisputeResolver` → **v2**: No longer exists
 
-### Method Signature Changes
-- **v1**: `createDispute(uint256 _choices, bytes _extraData)`
-- **v2**: `createDispute(uint256 _numberOfChoices, bytes _extraData)`
+### 2. Appeal System
+- **v1**: Appeals handled by arbitrator interface (`appealCost`, `appealPeriod`, `appeal` functions)
+- **v2**: Appeals handled by DisputeKit implementation, removed from arbitrator interface
 
-## Contract-by-Contract Upgrade Plan
+### 3. Dispute Creation
+- **v1**: `createDispute(uint256 _choices, bytes calldata _extraData)`
+- **v2**: `createDispute(uint256 _numberOfChoices, bytes calldata _extraData)`
 
-### 1. RealitioForeignProxyLZ.sol Upgrades
+### 4. Ruling System
+- **v1**: `currentRuling(uint256 _disputeID) returns (uint256 ruling)`
+- **v2**: `currentRuling(uint256 _disputeID) returns (uint256 ruling, bool tied, bool overridden)`
 
-#### 1.1 Interface Updates
-- [ ] Replace `IArbitrator` with `IArbitratorV2`
-- [ ] Replace `IDisputeResolver` with `IArbitrableV2`
-- [ ] Import `IDisputeTemplateRegistry` from Kleros v2 contracts
+### 5. Evidence/MetaEvidence
+- **v1**: Uses `MetaEvidence` events and evidence submission
+- **v2**: Uses dispute templates via `IDisputeTemplateRegistry`
 
-#### 1.2 Storage Updates
-- [ ] Add `IDisputeTemplateRegistry public templateRegistry`
-- [ ] Add `uint256 public templateId`
-- [ ] Add `ArbitrationParams` struct similar to RealityV2.sol
-- [ ] Add `arbitrationParamsChanges` array for parameter versioning
+### 6. Events
+- **v1**: `MetaEvidence`, `Evidence`, `Dispute` events
+- **v2**: `DisputeRequest` event
 
-#### 1.3 Constructor Updates
-- [ ] Add `IDisputeTemplateRegistry _templateRegistry` parameter
-- [ ] Add `string memory _templateData` parameter
-- [ ] Add `string memory _templateDataMappings` parameter
-- [ ] Initialize dispute template in constructor
+## Implementation Plan
 
-#### 1.4 Method Updates
-- [ ] Add `createDispute` call to use v2 interface
-- [ ] Add `rule` method implementation for `IArbitrableV2`
-- [ ] Update dispute creation to emit `DisputeRequest` event
+### Phase 1: Interface Updates
 
-#### 1.5 Governance Methods
-- [ ] Add `changeArbitrationParams` method
-- [ ] Add `changeTemplateRegistry` method
-- [ ] Add `changeDisputeTemplate` method
-- [ ] Add appropriate access control (governor pattern)
+#### 1.1 Update RealitioForeignProxyLZ.sol
 
-### 2. RealitioHomeProxyLZ.sol Upgrades
+**Import Changes:**
+- Remove: `import {IDisputeResolver, IArbitrator} from "@kleros/dispute-resolver-interface-contract-0.8/contracts/IDisputeResolver.sol";`
+- Add: `import {IArbitrableV2, IArbitratorV2} from "@kleros/kleros-v2-contracts/arbitration/interfaces/IArbitratorV2.sol";`
+- Add: `import {IDisputeTemplateRegistry} from "@kleros/kleros-v2-contracts/arbitration/interfaces/IDisputeTemplateRegistry.sol";`
 
-#### 2.1 Interface Updates
-- [ ] Update imports to reference v2 interfaces where needed
-- [ ] Ensure compatibility with v2 arbitration flow
+**Contract Declaration:**
+- Change: `contract RealitioForeignProxyLZ is IForeignArbitrationProxy, IDisputeResolver`
+- To: `contract RealitioForeignProxyLZ is IForeignArbitrationProxy, IArbitrableV2`
 
-#### 2.2 Message Protocol Updates
-- [ ] Review cross-chain message format compatibility
-- [ ] Update message handlers to support v2 dispute data
+**Storage Variables:**
+- Change: `IArbitrator public immutable arbitrator;`
+- To: `IArbitratorV2 public immutable arbitrator;`
+- Add: `IDisputeTemplateRegistry public immutable templateRegistry;`
+- Add: `uint256 public immutable templateId;`
 
-#### 2.3 Storage Updates
-- [ ] Add fields to track v2-specific arbitration parameters
-- [ ] Update `Request` struct if needed for v2 compatibility
+#### 1.2 Update RealitioHomeProxyLZ.sol
 
-### 3. Cross-Chain Communication Updates
+**No major interface changes needed** - this contract doesn't interact directly with Kleros arbitrator.
 
-#### 3.1 Message Format Review
-- [ ] Ensure LayerZero message payloads support v2 data structures
-- [ ] Update message tags if new message types are needed
-- [ ] Verify backward compatibility during transition period
+### Phase 2: Remove Appeal System
 
+#### 2.1 Remove Appeal-Related Code from RealitioForeignProxyLZ.sol
 
+**Remove Functions:**
+- `fundAppeal()`
+- `withdrawFeesAndRewards()`
+- `withdrawFeesAndRewardsForAllRounds()`
+- `getMultipliers()`
+- `getNumberOfRounds()`
+- `getRoundInfo()`
+- `getFundingStatus()`
+- `getContributionsToSuccessfulFundings()`
+- `getTotalWithdrawableAmount()`
 
-### 4. Error Handling and Events
+**Remove Storage:**
+- `Round` struct
+- `rounds` array in `ArbitrationRequest`
+- `winnerMultiplier`, `loserMultiplier`, `loserAppealPeriodMultiplier`
+- All round-related mappings
 
-#### 4.1 Error Updates
-- [ ] Replace old error patterns with v2-style custom errors
-- [ ] Add new error types for v2-specific conditions
-- [ ] Update error messages for clarity
+**Remove Events:**
+- `Contribution`
+- `RulingFunded`
+- `Withdrawal`
 
-#### 4.2 Event Updates
-- [ ] Add `DisputeRequest` event emission
-- [ ] Add `Ruling` event emission
-- [ ] Update existing events for v2 compatibility
+#### 2.2 Simplify ArbitrationRequest Struct
 
-### 5. Testing and Validation
+**Current:**
+```solidity
+struct ArbitrationRequest {
+    Status status;
+    uint248 deposit;
+    uint256 disputeID;
+    uint256 answer;
+    Round[] rounds;
+}
+```
 
-#### 5.1 Unit Tests
-- [ ] Test v2 dispute creation flow
-- [ ] Test cross-chain message handling
-- [ ] Test governance functions
+**New:**
+```solidity
+struct ArbitrationRequest {
+    Status status;
+    uint248 deposit;
+    uint256 disputeID;
+    uint256 answer;
+    uint256 templateId; // For dispute template
+}
+```
 
-#### 5.2 Integration Tests
-- [ ] Test full cross-chain arbitration flow
-- [ ] Test dispute resolution and ruling relay
+### Phase 3: Update Dispute Creation
 
-#### 5.3 Migration Tests
-- [ ] Test upgrade path from v1 to v2
-- [ ] Test backward compatibility scenarios
-- [ ] Test parameter migration
+#### 3.1 Update Constructor
 
-### 6. Documentation Updates
+**Add Parameters:**
+- `IDisputeTemplateRegistry _templateRegistry`
+- `string memory _templateData`
+- `string memory _templateDataMappings`
 
-#### 6.1 Technical Documentation
-- [ ] Update contract documentation
-- [ ] Document new v2-specific features
-- [ ] Update deployment guides
+**Remove Parameters:**
+- `string memory _metaEvidence`
+- `uint256 _winnerMultiplier`
+- `uint256 _loserMultiplier`
+- `uint256 _loserAppealPeriodMultiplier`
 
-#### 6.2 API Documentation
-- [ ] Update method signatures in documentation
-- [ ] Document new governance methods
-- [ ] Update error handling documentation
+#### 3.2 Update receiveArbitrationAcknowledgement()
 
-## Implementation Priority
+**Current Dispute Creation:**
+```solidity
+arbitrator.createDispute{value: arbitrationCost}(NUMBER_OF_CHOICES_FOR_ARBITRATOR, arbitratorExtraData)
+```
 
-### Phase 1: Core Upgrade (High Priority)
-1. Interface and import updates
-2. Basic v2 dispute creation
-3. Core arbitration flow compatibility
+**New Dispute Creation:**
+```solidity
+arbitrator.createDispute{value: arbitrationCost}(NUMBER_OF_CHOICES_FOR_ARBITRATOR, arbitratorExtraData)
+```
 
-### Phase 2: Advanced Features (Medium Priority)
-1. Dispute template management
-2. Enhanced governance functions
+**Add Template Event:**
+```solidity
+emit DisputeRequest(arbitrator, disputeID, arbitrationID, templateId, "");
+```
 
-### Phase 3: Optimization (Low Priority)
-1. Gas optimization
-2. Advanced error handling
-3. Extended testing coverage
+### Phase 4: Update Evidence System
 
-## Risk Assessment
+#### 4.1 Remove Evidence Functions
 
-### High Risk Items
-- Cross-chain message format changes
-- Arbitration parameter migration
+**Remove from RealitioForeignProxyLZ.sol:**
+- `submitEvidence()` function
+- `Evidence` event emission
 
-### Medium Risk Items
-- Event emission changes
-- Error handling updates
-- Template registry integration
+#### 4.2 Update MetaEvidence System
 
-### Low Risk Items
-- Documentation updates
-- Gas optimization
-- Extended testing
+**Remove:**
+- `MetaEvidence` event emission in constructor
+- `META_EVIDENCE_ID` constant
+
+**Add:**
+- Template registration in constructor
+- `DisputeRequest` event emission
+
+### Phase 5: Update Ruling System
+
+#### 5.1 Update rule() Function
+
+**Current:**
+```solidity
+function rule(uint256 _disputeID, uint256 _ruling) external override
+```
+
+**Changes:**
+- Remove appeal-related logic
+- Remove round handling
+- Simplify ruling assignment
+- Remove `Ruling` event (handled by arbitrator in v2)
+
+#### 5.2 Update currentRuling Usage
+
+**Update any calls to:**
+- `arbitrator.currentRuling(_disputeID)` → handle new return values `(ruling, tied, overridden)`
+
+### Phase 6: Update Utility Functions
+
+#### 6.1 Update View Functions
+
+**Remove:**
+- All appeal-related view functions
+- `numberOfRulingOptions()` (may need to keep for interface compatibility)
+
+**Update:**
+- `getDisputeFee()` to use v2 interface
+
+#### 6.2 Update Event Emissions
+
+**Replace:**
+- `MetaEvidence` events with `DisputeRequest` events
+- Remove `Evidence` event emissions
+
+### Phase 7: Testing and Validation
+
+#### 7.1 Create Test Suite
+
+**Test Cases:**
+1. Dispute creation with v2 arbitrator
+2. Cross-chain communication (Home ↔ Foreign)
+3. Ruling relay functionality
+4. Template registration and usage
+5. Fee calculation accuracy
+
+#### 7.2 Integration Testing
+
+**Test with:**
+- Kleros v2 testnet deployment
+- LayerZero testnet
+- Realitio testnet contract
+
+### Phase 8: Documentation and Deployment
+
+#### 8.1 Update Documentation
+
+**Update:**
+- Contract interfaces documentation
+- Deployment scripts
+- Integration guides
+
+#### 8.2 Deployment Strategy
+
+**Steps:**
+1. Deploy v2 contracts to testnet
+2. Comprehensive testing
+3. Security review
+4. Mainnet deployment
+5. Migration plan from v1 to v2
+
+## Files to Modify
+
+### Primary Contracts
+- `contracts/src/RealitioForeignProxyLZ.sol` - Major changes
+- `contracts/src/RealitioHomeProxyLZ.sol` - Minor changes
+
+### Supporting Files
+- `contracts/src/interfaces/IArbitrationProxies.sol` - Update interfaces
+- Deployment scripts
+- Test files
+
+## Compatibility Notes
+
+### Breaking Changes
+- **Appeal System**: Complete removal of appeal functionality
+- **Evidence System**: Removal of evidence submission
+- **Events**: Different event structure
+- **View Functions**: Many appeal-related functions removed
+
+### Backward Compatibility
+- **Not backward compatible** with v1 arbitrator
+- **Requires** Kleros v2 deployment
+- **Interface changes** will break existing integrations
+
+## Implementation Timeline
+
+1. **Week 1-2**: Interface updates and basic structure changes
+2. **Week 3**: Remove appeal system and update dispute creation
+3. **Week 4**: Update evidence/template system and ruling logic
+4. **Week 5**: Testing and debugging
+5. **Week 6**: Integration testing and documentation
+6. **Week 7**: Security review and final adjustments
+7. **Week 8**: Deployment preparation and execution
+
+## Risk Mitigation
+
+### Technical Risks
+- **Interface mismatches**: Thorough testing with v2 arbitrator
+- **Cross-chain compatibility**: Extensive LayerZero integration testing
+- **Gas optimization**: Profile gas usage vs v1 implementation
+
+### Operational Risks
+- **Migration complexity**: Develop clear migration guide
+- **User adoption**: Ensure clear communication about changes
+- **Downtime**: Plan for smooth transition from v1 to v2
 
 ## Success Criteria
 
-1. **Functional Compatibility**: All v2 arbitration features work correctly
-2. **Cross-Chain Integrity**: LayerZero bridging remains secure and functional
-3. **Backward Compatibility**: Smooth migration path from v1 to v2
-4. **Gas Efficiency**: No significant gas cost increases
-5. **Security**: All security properties maintained or improved
-
-## Timeline Estimate
-
-- **Phase 1**: 2-3 weeks
-- **Phase 2**: 1-2 weeks  
-- **Phase 3**: 1 week
-- **Total**: 4-6 weeks
-
-## Notes
-
-- Consider maintaining v1 compatibility during transition period
-- Ensure proper access control for all governance functions
-- Test thoroughly on testnets before mainnet deployment
-- Consider implementing upgrade mechanisms for future versions 
+- [ ] All tests pass with Kleros v2 arbitrator
+- [ ] Cross-chain dispute creation and resolution works
+- [ ] Gas costs are reasonable compared to v1
+- [ ] All existing Realitio integration points work
+- [ ] Security audit completed successfully
+- [ ] Documentation is complete and accurate 
