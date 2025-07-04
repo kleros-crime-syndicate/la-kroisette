@@ -8,17 +8,17 @@
  *  @deployments: []
  */
 
-pragma solidity 0.8.27;
+pragma solidity 0.8.24;
 
-import {IAMB} from "./interfaces/gnosis/IAMB.sol";
+import {IAMB} from "./interfaces/IAMB.sol";
 import {IRealitio} from "./interfaces/IRealitio.sol";
 import {IForeignArbitrationProxy, IHomeArbitrationProxy} from "./interfaces/IArbitrationProxies.sol";
 
 /**
  * @title Arbitration proxy for Realitio on the side-chain side (A.K.A. the Home Chain).
- * @dev This contract is meant to be deployed to side-chains (i.e.: Gnosis) in which Reality.eth is deployed.
+ * @dev This contract is meant to be deployed to side-chains in which Reality.eth is deployed.
  */
-contract RealitioHomeProxyGnosis is IHomeArbitrationProxy {
+contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
     /// @dev The address of the Realitio contract (v2.1+ required). TRUSTED.
     IRealitio public immutable realitio;
 
