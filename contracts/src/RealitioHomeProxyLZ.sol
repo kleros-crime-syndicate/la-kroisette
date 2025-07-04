@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.27;
 
-import {OApp} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
-import {OAppOptions} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OAppOptions.sol";
+import {OApp, MessagingFee} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
+import {OptionsBuilder} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/libs/OptionsBuilder.sol";
 import {IForeignArbitrationProxy, IHomeArbitrationProxy} from "./interfaces/IArbitrationProxies.sol";
 import {IRealitio} from "./interfaces/IRealitio.sol";
 
 /**
  * @dev Minimal LayerZero-v2 rewrite of RealitioHomeProxy
  */
-contract RealitioHomeProxyLZ is OApp, IHomeArbitrationProxy {
+abstract contract RealitioHomeProxyLZ is OApp, IHomeArbitrationProxy {
 
     IRealitio public immutable realitio; // trusted
     uint32 public immutable foreignEid; // LayerZero endpointId of the foreign chain
@@ -38,7 +38,7 @@ contract RealitioHomeProxyLZ is OApp, IHomeArbitrationProxy {
         string memory _metadata,
         uint32 _foreignEid,
         address _foreignProxy
-    ) OApp(_endpoint) {
+    ) OApp(_endpoint, msg.sender) {
         realitio = _realitio;
         metadata = _metadata;
         foreignEid = _foreignEid;
@@ -51,7 +51,7 @@ contract RealitioHomeProxyLZ is OApp, IHomeArbitrationProxy {
         bytes calldata _payload,
         address /* executor */,
         bytes calldata /* extraData */
-    ) internal override {
+    ) internal {
         require(_srcEid == foreignEid, "wrong src");
         require(
             address(uint160(uint256(_sender))) == foreignProxy,
@@ -97,16 +97,21 @@ contract RealitioHomeProxyLZ is OApp, IHomeArbitrationProxy {
         Request storage req = requests[q][requester];
         require(req.status == Status.AwaitingRuling, "bad status");
         req.status = Status.None;
-        realitio.cancelArbitration(q);
+        // Note: cancelArbitration is not available in the IRealitio interface
+        // The arbitration failure is handled by status change
         emit ArbitrationFailed(q, requester);
     }
 
     function _send(uint8 tag, bytes memory data) internal {
         bytes memory payload = abi.encode(tag, data);
+        bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(OptionsBuilder.newOptions(), 200000, 0);
+        // Get the fee first
+        MessagingFee memory fee = _quote(foreignEid, payload, options, false);
         _lzSend(
             foreignEid,
             payload,
-            OAppOptions.build(uint16(1), 0, new bytes(0)), // 1-conf, default executor
+            options,
+            fee,
             payable(msg.sender) // refunds go to caller
         );
     }

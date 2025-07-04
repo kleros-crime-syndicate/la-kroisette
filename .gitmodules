@@ -1,0 +1,22 @@
+[submodule "contracts/lib/LayerZero-v2"]
+	path = contracts/lib/LayerZero-v2
+	url = https://github.com/LayerZero-Labs/LayerZero-v2
+[submodule "lib/LayerZero-v2"]
+	branch = main
+[submodule "contracts/lib/kleros-v2"]
+	path = contracts/lib/kleros-v2
+	url = https://github.com/kleros/kleros-v2
+[submodule "lib/kleros-v2"]
+	branch = master
+[submodule "contracts/lib/dispute-resolver-interface-contract"]
+	path = contracts/lib/dispute-resolver-interface-contract
+	url = https://github.com/kleros/dispute-resolver-interface-contract
+[submodule "contracts/lib/openzeppelin-contracts"]
+	path = contracts/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "contracts/lib/solidity-bytes-utils"]
+	path = contracts/lib/solidity-bytes-utils
+	url = https://github.com/GNSPS/solidity-bytes-utils
+[submodule "contracts/lib/erc-792"]
+	path = contracts/lib/erc-792
+	url = https://github.com/kleros/erc-792
