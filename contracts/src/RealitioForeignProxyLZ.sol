@@ -12,7 +12,7 @@ import {SafeSend} from "./libraries/SafeSend.sol";
 import "./Constants.sol";
 
 /**
- * @title Arbitration proxy for Realitio on Ethereum side (A.K.A. the Foreign Chain).
+ * @title Arbitration proxy for Realitio on the Arbitrator side (A.K.A. the Foreign Chain).
  * @dev This contract is meant to be deployed to the Ethereum chains where Kleros is deployed.
  */
 contract RealitioForeignProxyLZ is
@@ -52,13 +52,10 @@ contract RealitioForeignProxyLZ is
     }
 
     address public immutable wNative; // Address of wrapped version of the chain's native currency. WETH-like.
-
     IArbitratorV2 public immutable arbitrator; // The address of the arbitrator. TRUSTED.
     bytes public arbitratorExtraData; // The extra data used to raise a dispute in the arbitrator.
     IDisputeTemplateRegistry public immutable templateRegistry; // The dispute template registry. TRUSTED.
-
     uint32 public immutable homeEid; // The endpoint ID where the home proxy is deployed.
-
     mapping(uint256 => mapping(address => ArbitrationRequest))
         public arbitrationRequests; // Maps arbitration ID to its data. arbitrationRequests[uint(questionID)][requester].
     uint256 public templateId; // The dispute template identifier.

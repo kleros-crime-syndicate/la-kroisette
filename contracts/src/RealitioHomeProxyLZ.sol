@@ -10,7 +10,7 @@ import {IHomeArbitrationProxy} from "./interfaces/IArbitrationProxies.sol";
 import "./Constants.sol";
 
 /**
- * @title Arbitration proxy for Realitio on the side-chain side (A.K.A. the Home Chain).
+ * @title Arbitration proxy for Realitio on the Oracle side (A.K.A. the Home Chain).
  * @dev This contract is meant to be deployed to side-chains in which Reality.eth is deployed.
  */
 contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
