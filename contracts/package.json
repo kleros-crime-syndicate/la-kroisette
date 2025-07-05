@@ -5,9 +5,9 @@
   "license": "MIT",
   "scripts": {
     "clean": "rm -rf artifacts cache out",
-    "compile": "concurrently -c auto --names forge,hardhat '$npm_execpath run compile:forge' '$npm_execpath run compile:hardhat'",
-    "compile:forge": "forge build",
-    "compile:hardhat": "hardhat compile",
+    "build": "concurrently -c auto --names forge,hardhat '$npm_execpath run build:forge' '$npm_execpath run build:hardhat'",
+    "build:forge": "forge build",
+    "build:hardhat": "hardhat compile",
     "lint": "$npm_execpath run lint:js && $npm_execpath run lint:sol",
     "lint:fix": "eslint --fix '**/*.{js,ts,json}' && prettier --write . && solhint 'contracts/**/*.sol' --fix --noPrompt",
     "lint:js": "eslint '**/*.{js,ts,json}' && prettier --check .",
@@ -16,8 +16,8 @@
     "test:forge": "forge test",
     "test:hardhat": "hardhat test",
     "wire": "hardhat lz:oapp:wire --oapp-config layerzero.config.ts",
-    "deploy:home": "hardhat lz:deploy --tags Home",
-    "deploy:foreign": "hardhat lz:deploy --tags Foreign"
+    "deploy:home": "hardhat deploy --network sepolia --tags Home",
+    "deploy:foreign": "hardhat deploy --network arbitrum-sepolia --tags Foreign"
   },
   "resolutions": {
     "ethers": "^5.7.2",

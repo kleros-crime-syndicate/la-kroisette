@@ -4,12 +4,12 @@ import { TwoWayConfig, generateConnectionsConfig } from '@layerzerolabs/metadata
 import { OAppEnforcedOption, OmniPointHardhat } from '@layerzerolabs/toolbox-hardhat'
 
 const foreignContract: OmniPointHardhat = {
-    eid: EndpointId.ARBITRUM_V2_MAINNET,
+    eid: EndpointId.ARBITRUM_V2_TESTNET,
     contractName: 'RealitioForeignProxyLZ',
 }
 
 const homeContract: OmniPointHardhat = {
-    eid: EndpointId.POLYGON_V2_MAINNET,
+    eid: EndpointId.SEPOLIA_V2_TESTNET,
     contractName: 'RealitioHomeProxyLZ',
 }
 

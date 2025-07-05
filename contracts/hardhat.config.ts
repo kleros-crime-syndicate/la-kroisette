@@ -40,20 +40,20 @@ const config: HardhatUserConfig = {
         ],
     },
     networks: {
-        arbitrum: {
-            eid: EndpointId.ARBITRUM_V2_MAINNET,
-            url: process.env.RPC_URL_ARBITRUM || 'https://arbitrum.gateway.tenderly.co',
+        'arbitrum-sepolia': {
+            eid: EndpointId.ARBITRUM_V2_TESTNET,
+            url: process.env.RPC_URL_ARBITRUM_SEPOLIA || 'https://arbitrum-sepolia.gateway.tenderly.co',
             accounts,
             companionNetworks: {
-                home: "polygon",
+                home: "sepolia",
             }
         },
-        polygon: {
-            eid: EndpointId.POLYGON_V2_MAINNET,
-            url: process.env.RPC_URL_POLYGON || 'https://polygon.gateway.tenderly.co',
+        sepolia: {
+            eid: EndpointId.SEPOLIA_V2_TESTNET,
+            url: process.env.RPC_URL_SEPOLIA || 'https://sepolia.gateway.tenderly.co',
             accounts,
             companionNetworks: {
-                foreign: "arbitrum",
+                foreign: "arbitrum-sepolia",
             }
         },
         hardhat: {

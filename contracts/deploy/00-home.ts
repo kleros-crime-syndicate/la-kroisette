@@ -29,7 +29,7 @@ const deploy: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 deploy.tags = ["Home"];
 deploy.skip = async ({ network }) => {
-  return isSkipped(network, network.name !== "polygon");
+  return isSkipped(network, network.name !== "sepolia");
 };
 
 export default deploy;

@@ -70,7 +70,7 @@ const deploy: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
 deploy.tags = ["Foreign"];
 deploy.skip = async ({ network }) => {
-  return isSkipped(network, network.name !== "arbitrum");
+  return isSkipped(network, network.name !== "arbitrum-sepolia");
 };
 
 export default deploy;
