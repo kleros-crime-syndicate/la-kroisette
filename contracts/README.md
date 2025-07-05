@@ -1,66 +1,17 @@
-## Foundry
- 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## La Kroisette - Contracts
 
-Foundry consists of:
+### Oracle side
+Aka the home chain.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+**[RealitioHomeProxyLZ](https://sepolia.etherscan.io/address/0x92F1548e69d43E44F06aCaFdd6A5a951a1c1e055#code)**
 
-## Documentation
+### Arbitrator side
+Aka the foreign chain.
 
-https://book.getfoundry.sh/
+**[QuestionFormatter](https://sepolia.arbiscan.io/address/0x1c22c32c12695361A7b8a4Ee3751A7f246014b7c#code)**
 
-## Usage
+**[RealitioForeignProxyLZ](https://sepolia.arbiscan.io/address/0xC0b752bc1e025748B92A18d5FF3E31853F528522#code)**
 
-### Build
+### Getting Started
 
-```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+... TODO ...
