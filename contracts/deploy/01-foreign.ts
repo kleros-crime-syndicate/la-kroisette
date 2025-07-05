@@ -114,6 +114,11 @@ const deploy: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     ],
     log: true,
   });
+
+  await deploy("QuestionFormatter", {
+    from: deployer,
+    log: true,
+  });
 };
 
 deploy.tags = ["Foreign"];

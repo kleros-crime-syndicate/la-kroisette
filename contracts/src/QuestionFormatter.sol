@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.27;
+pragma solidity 0.8.24;
 
-contract StringFormatter {
+contract QuestionFormatter {
     /**
      * @dev Formats a question text template by replacing %s placeholders with values from data string
      * @param data String containing values separated by ␟ character
