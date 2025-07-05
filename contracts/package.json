@@ -18,12 +18,11 @@
     "wire": "hardhat lz:oapp:wire --oapp-config layerzero.config.ts",
     "deploy:home": "hardhat deploy --network sepolia --tags Home",
     "deploy:foreign": "hardhat deploy --network arbitrum-sepolia --tags Foreign",
-    "etherscan-verify:home": "hardhat etherscan-verify --network sepolia",
-    "etherscan-verify:foreign": "hardhat etherscan-verify --network arbitrum-sepolia"
+    "etherscan-verify:home": "hardhat etherscan-verify --network sepolia --contract-name RealitioHomeProxyLZ",
+    "etherscan-verify:foreign": "hardhat etherscan-verify --network arbitrum-sepolia --contract-name RealitioForeignProxyLZ"
   },
   "resolutions": {
-    "ethers": "^5.7.2",
-    "hardhat-deploy": "^0.12.1"
+    "ethers": "^5.7.2"
   },
   "devDependencies": {
     "@babel/core": "^7.23.9",
@@ -55,10 +54,10 @@
     "dotenv": "^16.4.1",
     "eslint": "^8.55.0",
     "eslint-plugin-jest-extended": "~2.0.0",
-    "ethers": "^5.7.2",
-    "hardhat": "^2.22.10",
+    "ethers": "^5.8.0",
+    "hardhat": "^2.25.0",
     "hardhat-contract-sizer": "^2.10.0",
-    "hardhat-deploy": "^0.12.1",
+    "hardhat-deploy": "^1.0.4",
     "mocha": "^10.2.0",
     "prettier": "^3.2.5",
     "solhint": "^4.1.1",
@@ -68,16 +67,6 @@
   },
   "engines": {
     "node": ">=18.16.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "ethers": "^5.7.2",
-      "hardhat-deploy": "^0.12.1"
-    }
-  },
-  "overrides": {
-    "ethers": "^5.7.2",
-    "hardhat-deploy": "^0.12.1"
   },
   "packageManager": "yarn@4.9.2"
 }

@@ -49,8 +49,8 @@ const config: HardhatUserConfig = {
             },
             verify: {
                 etherscan: {
-                    apiUrl: "https://api-sepolia.arbiscan.io",
-                    apiKey: process.env.ARBISCAN_API_KEY,
+                    apiUrl: "https://api.etherscan.io/v2/api",
+                    apiKey: process.env.ETHERSCAN_API_KEY,
                 },
             },
         },
@@ -63,7 +63,7 @@ const config: HardhatUserConfig = {
             },
             verify: {
                 etherscan: {
-                    apiUrl: "https://api-sepolia.etherscan.io",
+                    apiUrl: "https://api.etherscan.io/v2/api",
                     apiKey: process.env.ETHERSCAN_API_KEY,
                 },
             },
