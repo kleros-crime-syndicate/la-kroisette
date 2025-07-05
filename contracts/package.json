@@ -14,7 +14,10 @@
     "lint:sol": "solhint 'contracts/**/*.sol'",
     "test": "$npm_execpath run test:forge && $npm_execpath run test:hardhat",
     "test:forge": "forge test",
-    "test:hardhat": "hardhat test"
+    "test:hardhat": "hardhat test",
+    "wire": "hardhat lz:oapp:wire --oapp-config layerzero.config.ts",
+    "deploy:home": "hardhat lz:deploy --tags Home",
+    "deploy:foreign": "hardhat lz:deploy --tags Foreign"
   },
   "resolutions": {
     "ethers": "^5.7.2",
