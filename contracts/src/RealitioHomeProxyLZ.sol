@@ -1,36 +1,24 @@
 // SPDX-License-Identifier: MIT
 
-/**
- *  @authors: [@hbarcelos, @unknownunknown1]
- *  @reviewers: [@jaybuidl]
- *  @auditors: []
- *  @bounties: []
- *  @deployments: []
- */
-
 pragma solidity 0.8.24;
 
-import {IAMB} from "./interfaces/IAMB.sol";
+import {OApp, Origin, MessagingFee} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {OAppOptionsType3} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IRealitio} from "./interfaces/IRealitio.sol";
-import {IForeignArbitrationProxy, IHomeArbitrationProxy} from "./interfaces/IArbitrationProxies.sol";
+import {IHomeArbitrationProxy} from "./interfaces/IArbitrationProxies.sol";
+import "./Constants.sol";
 
 /**
  * @title Arbitration proxy for Realitio on the side-chain side (A.K.A. the Home Chain).
  * @dev This contract is meant to be deployed to side-chains in which Reality.eth is deployed.
  */
-contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
+contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
     /// @dev The address of the Realitio contract (v2.1+ required). TRUSTED.
     IRealitio public immutable realitio;
 
-    /// @dev ArbitraryMessageBridge contract address. TRUSTED.
-    IAMB public immutable amb;
-
-    /// @dev Address of the counter-party proxy on the Foreign Chain. TRUSTED.
-    /// Note that it needs to be precomputed before deployment by using deployer's address and tx nonce.
-    address public immutable foreignProxy;
-
-    /// @dev The chain ID where the foreign proxy is deployed.
-    bytes32 public immutable foreignChainId;
+    /// @dev The endpoint ID where the foreign proxy is deployed.
+    uint32 public immutable foreignEid;
 
     /// @dev Metadata for Realitio interface.
     string public override metadata;
@@ -55,33 +43,103 @@ contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
     /// @dev Associates a question ID with the requester who succeeded in requesting arbitration. questionIDToRequester[questionID]
     mapping(bytes32 => address) public questionIDToRequester;
 
-    modifier onlyForeignProxy() {
-        require(msg.sender == address(amb), "Only AMB allowed");
-        require(amb.messageSourceChainId() == foreignChainId, "Only foreign chain allowed");
-        require(amb.messageSender() == foreignProxy, "Only foreign proxy allowed");
-        _;
-    }
-
     /**
      * @notice Creates an arbitration proxy on the home chain.
      * @param _realitio Realitio contract address.
      * @param _metadata Metadata for Realitio.
-     * @param _foreignProxy The address of the proxy. Note that it needs to be precomputed before deployment by using deployer's address and tx nonce.
-     * @param _foreignChainId The ID of the chain where the foreign proxy is deployed.
-     * @param _amb ArbitraryMessageBridge contract address.
+     * @param _foreignEid The endpoint ID where the foreign proxy is deployed.
+     * @param _endpoint The LayerZero endpoint address.
+     * @param _owner The owner address for the OApp.
      */
     constructor(
         IRealitio _realitio,
         string memory _metadata,
-        address _foreignProxy,
-        uint256 _foreignChainId,
-        IAMB _amb
-    ) {
+        uint32 _foreignEid,
+        address _endpoint
+    ) OApp(_endpoint, msg.sender) Ownable(msg.sender) {
         realitio = _realitio;
         metadata = _metadata;
-        foreignProxy = _foreignProxy;
-        foreignChainId = bytes32(_foreignChainId);
-        amb = _amb;
+        foreignEid = _foreignEid;
+    }
+
+    /**
+     * @notice Allows the contract to receive ETH deposits for LayerZero fees.
+     */
+    receive() external payable {}
+
+    /**
+     * @notice Allows the owner to withdraw ETH from the contract.
+     * @param _amount The amount of ETH to withdraw.
+     */
+    function withdrawETH(uint256 _amount) external onlyOwner {
+        require(_amount <= address(this).balance, "Insufficient balance");
+        payable(owner()).transfer(_amount);
+    }
+
+    /**
+     * @notice LayerZero message receive function.
+     * @dev Routes incoming messages to appropriate handler functions.
+     */
+    function _lzReceive(
+        Origin calldata /*_origin*/,
+        bytes32 /*_guid*/,
+        bytes calldata _message,
+        address /*_executor*/,
+        bytes calldata /*_extraData*/
+    ) internal override {
+        // Decode message type first
+        uint16 msgType;
+        bytes memory payload;
+        
+        try this._decodeMessage(_message) returns (uint16 _msgType, bytes memory _payload) {
+            msgType = _msgType;
+            payload = _payload;
+        } catch {
+            revert("Invalid message format");
+        }
+        
+        // Route message based on type
+        if (msgType == MSG_TYPE_ARBITRATION_REQUEST) {
+            try this._decodeArbitrationRequest(payload) returns (bytes32 questionID, address requester, uint256 maxPrevious) {
+                _handleArbitrationRequest(questionID, requester, maxPrevious);
+            } catch {
+                revert("Invalid arbitration request payload");
+            }
+        } else if (msgType == MSG_TYPE_ARBITRATION_FAILURE) {
+            try this._decodeArbitrationFailure(payload) returns (bytes32 questionID, address requester) {
+                _handleArbitrationFailure(questionID, requester);
+            } catch {
+                revert("Invalid arbitration failure payload");
+            }
+        } else if (msgType == MSG_TYPE_ARBITRATION_ANSWER) {
+            try this._decodeArbitrationAnswer(payload) returns (bytes32 questionID, bytes32 answer) {
+                _handleArbitrationAnswer(questionID, answer);
+            } catch {
+                revert("Invalid arbitration answer payload");
+            }
+        } else {
+            revert("Unknown message type");
+        }
+    }
+
+    /**
+     * @notice External decoder functions for safe message parsing.
+     * @dev These are marked external to be called via try/catch for error handling.
+     */
+    function _decodeMessage(bytes calldata _message) external pure returns (uint16 msgType, bytes memory payload) {
+        return abi.decode(_message, (uint16, bytes));
+    }
+
+    function _decodeArbitrationRequest(bytes memory _payload) external pure returns (bytes32 questionID, address requester, uint256 maxPrevious) {
+        return abi.decode(_payload, (bytes32, address, uint256));
+    }
+
+    function _decodeArbitrationFailure(bytes memory _payload) external pure returns (bytes32 questionID, address requester) {
+        return abi.decode(_payload, (bytes32, address));
+    }
+
+    function _decodeArbitrationAnswer(bytes memory _payload) external pure returns (bytes32 questionID, bytes32 answer) {
+        return abi.decode(_payload, (bytes32, bytes32));
     }
 
     /**
@@ -94,11 +152,31 @@ contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
         bytes32 _questionID,
         address _requester,
         uint256 _maxPrevious
-    ) external override onlyForeignProxy {
+    ) external override {
+        _handleArbitrationRequest(_questionID, _requester, _maxPrevious);
+    }
+
+    /**
+     * @dev Internal handler for arbitration requests.
+     */
+    function _handleArbitrationRequest(
+        bytes32 _questionID,
+        address _requester,
+        uint256 _maxPrevious
+    ) internal {
+        require(_questionID != bytes32(0), "Question ID cannot be empty");
+        require(_requester != address(0), "Requester cannot be zero address");
+        
         Request storage request = requests[_questionID][_requester];
         require(request.status == Status.None, "Request already exists");
 
-        try realitio.notifyOfArbitrationRequest(_questionID, _requester, _maxPrevious) {
+        try
+            realitio.notifyOfArbitrationRequest(
+                _questionID,
+                _requester,
+                _maxPrevious
+            )
+        {
             request.status = Status.Notified;
             questionIDToRequester[_questionID] = _requester;
 
@@ -128,15 +206,38 @@ contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _requester The address of the user that requested arbitration.
      */
-    function handleNotifiedRequest(bytes32 _questionID, address _requester) external override {
+    function handleNotifiedRequest(
+        bytes32 _questionID,
+        address _requester
+    ) external override {
         Request storage request = requests[_questionID][_requester];
         require(request.status == Status.Notified, "Invalid request status");
 
         request.status = Status.AwaitingRuling;
 
-        bytes4 selector = IForeignArbitrationProxy.receiveArbitrationAcknowledgement.selector;
-        bytes memory data = abi.encodeWithSelector(selector, _questionID, _requester);
-        amb.requireToPassMessage(foreignProxy, data, amb.maxGasPerTx());
+        bytes memory message = abi.encode(
+            MSG_TYPE_ARBITRATION_ACKNOWLEDGEMENT,
+            _questionID,
+            _requester
+        );
+        
+        // LayerZero fee calculation
+        bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(200000)); // Set gas limit to 200,000 for acknowledgement processing
+        bytes memory options = combineOptions(foreignEid, MSG_TYPE_ARBITRATION_ACKNOWLEDGEMENT, gasOptions);
+        MessagingFee memory fee = _quote(foreignEid, message, options, false);
+        
+        // Check contract balance for LayerZero fee
+        if (address(this).balance < fee.nativeFee) {
+            revert InsufficientFundsForLayerZero(fee.nativeFee, address(this).balance);
+        }
+        
+        _lzSend(
+            foreignEid,
+            message,
+            options,
+            MessagingFee(fee.nativeFee, 0),
+            payable(address(this))
+        );
 
         emit RequestAcknowledged(_questionID, _requester);
     }
@@ -152,16 +253,39 @@ contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _requester The address of the user that requested arbitration.
      */
-    function handleRejectedRequest(bytes32 _questionID, address _requester) external override {
+    function handleRejectedRequest(
+        bytes32 _questionID,
+        address _requester
+    ) external override {
         Request storage request = requests[_questionID][_requester];
         require(request.status == Status.Rejected, "Invalid request status");
 
         // At this point, only the request.status is set, simply resetting the status to Status.None is enough.
         request.status = Status.None;
 
-        bytes4 selector = IForeignArbitrationProxy.receiveArbitrationCancelation.selector;
-        bytes memory data = abi.encodeWithSelector(selector, _questionID, _requester);
-        amb.requireToPassMessage(foreignProxy, data, amb.maxGasPerTx());
+        bytes memory message = abi.encode(
+            MSG_TYPE_ARBITRATION_CANCELATION,
+            _questionID,
+            _requester
+        );
+        
+        // LayerZero fee calculation
+        bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(150000)); // Set gas limit to 150,000 for cancelation processing
+        bytes memory options = combineOptions(foreignEid, MSG_TYPE_ARBITRATION_CANCELATION, gasOptions);
+        MessagingFee memory fee = _quote(foreignEid, message, options, false);
+        
+        // Check contract balance for LayerZero fee
+        if (address(this).balance < fee.nativeFee) {
+            revert InsufficientFundsForLayerZero(fee.nativeFee, address(this).balance);
+        }
+        
+        _lzSend(
+            foreignEid,
+            message,
+            options,
+            MessagingFee(fee.nativeFee, 0),
+            payable(address(this))
+        );
 
         emit RequestCanceled(_questionID, _requester);
     }
@@ -172,9 +296,28 @@ contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _requester The address of the user that requested arbitration.
      */
-    function receiveArbitrationFailure(bytes32 _questionID, address _requester) external override onlyForeignProxy {
+    function receiveArbitrationFailure(
+        bytes32 _questionID,
+        address _requester
+    ) external override {
+        _handleArbitrationFailure(_questionID, _requester);
+    }
+
+    /**
+     * @dev Internal handler for arbitration failures.
+     */
+    function _handleArbitrationFailure(
+        bytes32 _questionID,
+        address _requester
+    ) internal {
+        require(_questionID != bytes32(0), "Question ID cannot be empty");
+        require(_requester != address(0), "Requester cannot be zero address");
+        
         Request storage request = requests[_questionID][_requester];
-        require(request.status == Status.AwaitingRuling, "Invalid request status");
+        require(
+            request.status == Status.AwaitingRuling,
+            "Invalid request status"
+        );
 
         // At this point, only the request.status is set, simply resetting the status to Status.None is enough.
         request.status = Status.None;
@@ -189,10 +332,30 @@ contract RealitioHomeProxyLZ is IHomeArbitrationProxy {
      * @param _questionID The ID of the question.
      * @param _answer The answer from the arbitrator.
      */
-    function receiveArbitrationAnswer(bytes32 _questionID, bytes32 _answer) external override onlyForeignProxy {
+    function receiveArbitrationAnswer(
+        bytes32 _questionID,
+        bytes32 _answer
+    ) external override {
+        _handleArbitrationAnswer(_questionID, _answer);
+    }
+
+    /**
+     * @dev Internal handler for arbitration answers.
+     */
+    function _handleArbitrationAnswer(
+        bytes32 _questionID,
+        bytes32 _answer
+    ) internal {
+        require(_questionID != bytes32(0), "Question ID cannot be empty");
+        
         address requester = questionIDToRequester[_questionID];
+        require(requester != address(0), "No requester found for question");
+        
         Request storage request = requests[_questionID][requester];
-        require(request.status == Status.AwaitingRuling, "Invalid request status");
+        require(
+            request.status == Status.AwaitingRuling,
+            "Invalid request status"
+        );
 
         request.status = Status.Ruled;
         request.arbitratorAnswer = _answer;
