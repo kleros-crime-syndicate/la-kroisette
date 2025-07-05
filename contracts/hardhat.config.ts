@@ -46,7 +46,13 @@ const config: HardhatUserConfig = {
             accounts,
             companionNetworks: {
                 home: "sepolia",
-            }
+            },
+            verify: {
+                etherscan: {
+                    apiUrl: "https://api-sepolia.arbiscan.io",
+                    apiKey: process.env.ARBISCAN_API_KEY,
+                },
+            },
         },
         sepolia: {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
@@ -54,7 +60,13 @@ const config: HardhatUserConfig = {
             accounts,
             companionNetworks: {
                 foreign: "arbitrum-sepolia",
-            }
+            },
+            verify: {
+                etherscan: {
+                    apiUrl: "https://api-sepolia.etherscan.io",
+                    apiKey: process.env.ETHERSCAN_API_KEY,
+                },
+            },
         },
         hardhat: {
             // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit

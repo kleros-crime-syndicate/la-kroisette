@@ -17,7 +17,9 @@
     "test:hardhat": "hardhat test",
     "wire": "hardhat lz:oapp:wire --oapp-config layerzero.config.ts",
     "deploy:home": "hardhat deploy --network sepolia --tags Home",
-    "deploy:foreign": "hardhat deploy --network arbitrum-sepolia --tags Foreign"
+    "deploy:foreign": "hardhat deploy --network arbitrum-sepolia --tags Foreign",
+    "etherscan-verify:home": "hardhat etherscan-verify --network sepolia",
+    "etherscan-verify:foreign": "hardhat etherscan-verify --network arbitrum-sepolia"
   },
   "resolutions": {
     "ethers": "^5.7.2",
