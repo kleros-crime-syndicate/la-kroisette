@@ -45,12 +45,12 @@ const deploy: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const weth = await deployments.get("WETH");
 
-  const { klerosCore, disputeTemplateRegistry } = await getContractsEthers(ethers.provider, "mainnetNeo");
+  const { klerosCore, disputeTemplateRegistry } = await getContractsEthers(ethers.provider, "testnet");
   const disputeTemplate = disputeTemplateFn(chainId, klerosCore.address as string);
   const disputeTemplateMappings = "TODO";
 
   const homeNetwork = hre.config.networks[hre.network.companionNetworks.home];
-  const endpointV2Deployment = await hre.deployments.get('EndpointV2')
+  const endpointV2Deployment = await deployments.get('EndpointV2');
   
   await deploy("RealitioForeignProxyLZ", {
     from: deployer,

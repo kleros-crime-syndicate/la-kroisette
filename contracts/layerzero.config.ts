@@ -4,7 +4,7 @@ import { TwoWayConfig, generateConnectionsConfig } from '@layerzerolabs/metadata
 import { OAppEnforcedOption, OmniPointHardhat } from '@layerzerolabs/toolbox-hardhat'
 
 const foreignContract: OmniPointHardhat = {
-    eid: EndpointId.ARBITRUM_V2_TESTNET,
+    eid: EndpointId.ARBSEP_V2_TESTNET,
     contractName: 'RealitioForeignProxyLZ',
 }
 

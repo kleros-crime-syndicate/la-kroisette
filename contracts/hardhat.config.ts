@@ -41,7 +41,7 @@ const config: HardhatUserConfig = {
     },
     networks: {
         'arbitrum-sepolia': {
-            eid: EndpointId.ARBITRUM_V2_TESTNET,
+            eid: EndpointId.ARBSEP_V2_TESTNET,
             url: process.env.RPC_URL_ARBITRUM_SEPOLIA || 'https://arbitrum-sepolia.gateway.tenderly.co',
             accounts,
             companionNetworks: {
