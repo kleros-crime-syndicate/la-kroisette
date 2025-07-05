@@ -236,7 +236,7 @@ interface IForeignArbitrationProxy {
     function handleFailedDisputeCreation(
         bytes32 _questionID,
         address _requester
-    ) external payable;
+    ) external;
 
     /**
      * @notice Gets the fee to create a dispute.

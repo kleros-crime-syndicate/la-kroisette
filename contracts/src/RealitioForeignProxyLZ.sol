@@ -56,12 +56,12 @@ contract RealitioForeignProxyLZ is
     IArbitratorV2 public immutable arbitrator; // The address of the arbitrator. TRUSTED.
     bytes public arbitratorExtraData; // The extra data used to raise a dispute in the arbitrator.
     IDisputeTemplateRegistry public immutable templateRegistry; // The dispute template registry. TRUSTED.
-    uint256 public immutable templateId; // The dispute template identifier.
 
     uint32 public immutable homeEid; // The endpoint ID where the home proxy is deployed.
 
     mapping(uint256 => mapping(address => ArbitrationRequest))
         public arbitrationRequests; // Maps arbitration ID to its data. arbitrationRequests[uint(questionID)][requester].
+    uint256 public templateId; // The dispute template identifier.
     mapping(uint256 => DisputeDetails) public disputeIDToDisputeDetails; // Maps external dispute ids to local arbitration ID and requester who was able to complete the arbitration request.
     mapping(uint256 => bool) public arbitrationIDToDisputeExists; // Whether a dispute has already been created for the given arbitration ID or not.
     mapping(uint256 => address) public arbitrationIDToRequester; // Maps arbitration ID to the requester who was able to complete the arbitration request.
@@ -118,7 +118,7 @@ contract RealitioForeignProxyLZ is
      * @notice Allows the owner to change the dispute template.
      * @param _templateData The new dispute template data.
      * @param _templateDataMappings The new dispute template data mappings.
-     */ 
+     */
     function changeDisputeTemplate(
         string memory _templateData,
         string memory _templateDataMappings
@@ -522,7 +522,7 @@ contract RealitioForeignProxyLZ is
             msg.sender,
             _maxPrevious
         );
-        bytes memory combinedOptions = combineOptions(
+        bytes memory combinedOptions = this.combineOptions(
             homeEid,
             MSG_TYPE_ARBITRATION_REQUEST,
             _options
@@ -584,7 +584,7 @@ contract RealitioForeignProxyLZ is
             _questionID,
             _requester
         );
-        bytes memory combinedOptions = combineOptions(
+        bytes memory combinedOptions = this.combineOptions(
             homeEid,
             MSG_TYPE_ARBITRATION_FAILURE,
             _options
@@ -657,7 +657,7 @@ contract RealitioForeignProxyLZ is
         );
 
         // LayerZero fee calculation
-        bytes memory combinedOptions = combineOptions(
+        bytes memory combinedOptions = this.combineOptions(
             homeEid,
             MSG_TYPE_ARBITRATION_ANSWER,
             _options

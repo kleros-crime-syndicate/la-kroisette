@@ -7,8 +7,6 @@ import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
 import { EndpointId } from '@layerzerolabs/lz-definitions'
 
 const MNEMONIC = process.env.MNEMONIC
-
-// If you prefer to be authenticated using a private key, set a PRIVATE_KEY environment variable
 const PRIVATE_KEY = process.env.PRIVATE_KEY
 
 const accounts: HttpNetworkAccountsUserConfig | undefined = MNEMONIC
@@ -25,6 +23,7 @@ if (accounts == null) {
 
 const config: HardhatUserConfig = {
     paths: {
+        sources: './src',
         cache: 'cache/hardhat',
     },
     solidity: {

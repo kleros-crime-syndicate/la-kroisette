@@ -49,7 +49,6 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
      * @param _metadata Metadata for Realitio.
      * @param _foreignEid The endpoint ID where the foreign proxy is deployed.
      * @param _endpoint The LayerZero endpoint address.
-     * @param _owner The owner address for the OApp.
      */
     constructor(
         IRealitio _realitio,
@@ -223,7 +222,7 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
         
         // LayerZero fee calculation
         bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(200000)); // Set gas limit to 200,000 for acknowledgement processing
-        bytes memory options = combineOptions(foreignEid, MSG_TYPE_ARBITRATION_ACKNOWLEDGEMENT, gasOptions);
+        bytes memory options = this.combineOptions(foreignEid, MSG_TYPE_ARBITRATION_ACKNOWLEDGEMENT, gasOptions);
         MessagingFee memory fee = _quote(foreignEid, message, options, false);
         
         // Check contract balance for LayerZero fee
@@ -271,7 +270,7 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
         
         // LayerZero fee calculation
         bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(150000)); // Set gas limit to 150,000 for cancelation processing
-        bytes memory options = combineOptions(foreignEid, MSG_TYPE_ARBITRATION_CANCELATION, gasOptions);
+        bytes memory options = this.combineOptions(foreignEid, MSG_TYPE_ARBITRATION_CANCELATION, gasOptions);
         MessagingFee memory fee = _quote(foreignEid, message, options, false);
         
         // Check contract balance for LayerZero fee
