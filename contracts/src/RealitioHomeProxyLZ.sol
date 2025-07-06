@@ -4,6 +4,7 @@ pragma solidity 0.8.24;
 
 import {OApp, Origin, MessagingFee} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
 import {OAppOptionsType3} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
+import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IRealitio} from "./interfaces/IRealitio.sol";
 import {IHomeArbitrationProxy} from "./interfaces/IArbitrationProxies.sol";
@@ -89,29 +90,42 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
         // Decode message type first
         uint16 msgType;
         bytes memory payload;
-        
-        try this._decodeMessage(_message) returns (uint16 _msgType, bytes memory _payload) {
+
+        try this._decodeMessage(_message) returns (
+            uint16 _msgType,
+            bytes memory _payload
+        ) {
             msgType = _msgType;
             payload = _payload;
         } catch {
             revert("Invalid message format");
         }
-        
+
         // Route message based on type
         if (msgType == MSG_TYPE_ARBITRATION_REQUEST) {
-            try this._decodeArbitrationRequest(payload) returns (bytes32 questionID, address requester, uint256 maxPrevious) {
+            try this._decodeArbitrationRequest(payload) returns (
+                bytes32 questionID,
+                address requester,
+                uint256 maxPrevious
+            ) {
                 _handleArbitrationRequest(questionID, requester, maxPrevious);
             } catch {
                 revert("Invalid arbitration request payload");
             }
         } else if (msgType == MSG_TYPE_ARBITRATION_FAILURE) {
-            try this._decodeArbitrationFailure(payload) returns (bytes32 questionID, address requester) {
+            try this._decodeArbitrationFailure(payload) returns (
+                bytes32 questionID,
+                address requester
+            ) {
                 _handleArbitrationFailure(questionID, requester);
             } catch {
                 revert("Invalid arbitration failure payload");
             }
         } else if (msgType == MSG_TYPE_ARBITRATION_ANSWER) {
-            try this._decodeArbitrationAnswer(payload) returns (bytes32 questionID, bytes32 answer) {
+            try this._decodeArbitrationAnswer(payload) returns (
+                bytes32 questionID,
+                bytes32 answer
+            ) {
                 _handleArbitrationAnswer(questionID, answer);
             } catch {
                 revert("Invalid arbitration answer payload");
@@ -125,19 +139,31 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
      * @notice External decoder functions for safe message parsing.
      * @dev These are marked external to be called via try/catch for error handling.
      */
-    function _decodeMessage(bytes calldata _message) external pure returns (uint16 msgType, bytes memory payload) {
+    function _decodeMessage(
+        bytes calldata _message
+    ) external pure returns (uint16 msgType, bytes memory payload) {
         return abi.decode(_message, (uint16, bytes));
     }
 
-    function _decodeArbitrationRequest(bytes memory _payload) external pure returns (bytes32 questionID, address requester, uint256 maxPrevious) {
+    function _decodeArbitrationRequest(
+        bytes memory _payload
+    )
+        external
+        pure
+        returns (bytes32 questionID, address requester, uint256 maxPrevious)
+    {
         return abi.decode(_payload, (bytes32, address, uint256));
     }
 
-    function _decodeArbitrationFailure(bytes memory _payload) external pure returns (bytes32 questionID, address requester) {
+    function _decodeArbitrationFailure(
+        bytes memory _payload
+    ) external pure returns (bytes32 questionID, address requester) {
         return abi.decode(_payload, (bytes32, address));
     }
 
-    function _decodeArbitrationAnswer(bytes memory _payload) external pure returns (bytes32 questionID, bytes32 answer) {
+    function _decodeArbitrationAnswer(
+        bytes memory _payload
+    ) external pure returns (bytes32 questionID, bytes32 answer) {
         return abi.decode(_payload, (bytes32, bytes32));
     }
 
@@ -165,7 +191,7 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
     ) internal {
         require(_questionID != bytes32(0), "Question ID cannot be empty");
         require(_requester != address(0), "Requester cannot be zero address");
-        
+
         Request storage request = requests[_questionID][_requester];
         require(request.status == Status.None, "Request already exists");
 
@@ -219,17 +245,28 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
             _questionID,
             _requester
         );
-        
+
         // LayerZero fee calculation
-        bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(200000)); // Set gas limit to 200,000 for acknowledgement processing
-        bytes memory options = this.combineOptions(foreignEid, MSG_TYPE_ARBITRATION_ACKNOWLEDGEMENT, gasOptions);
+        bytes memory gasOptions = OptionsBuilder.addExecutorLzReceiveOption(
+            OptionsBuilder.newOptions(),
+            1000000,
+            0
+        );
+        bytes memory options = this.combineOptions(
+            foreignEid,
+            MSG_TYPE_ARBITRATION_ACKNOWLEDGEMENT,
+            gasOptions
+        );
         MessagingFee memory fee = _quote(foreignEid, message, options, false);
-        
+
         // Check contract balance for LayerZero fee
         if (address(this).balance < fee.nativeFee) {
-            revert InsufficientFundsForLayerZero(fee.nativeFee, address(this).balance);
+            revert InsufficientFundsForLayerZero(
+                fee.nativeFee,
+                address(this).balance
+            );
         }
-        
+
         _lzSend(
             foreignEid,
             message,
@@ -267,17 +304,28 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
             _questionID,
             _requester
         );
-        
+
         // LayerZero fee calculation
-        bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(150000)); // Set gas limit to 150,000 for cancelation processing
-        bytes memory options = this.combineOptions(foreignEid, MSG_TYPE_ARBITRATION_CANCELATION, gasOptions);
+        bytes memory gasOptions = OptionsBuilder.addExecutorLzReceiveOption(
+            OptionsBuilder.newOptions(),
+            1000000,
+            0
+        );
+        bytes memory options = this.combineOptions(
+            foreignEid,
+            MSG_TYPE_ARBITRATION_CANCELATION,
+            gasOptions
+        );
         MessagingFee memory fee = _quote(foreignEid, message, options, false);
-        
+
         // Check contract balance for LayerZero fee
         if (address(this).balance < fee.nativeFee) {
-            revert InsufficientFundsForLayerZero(fee.nativeFee, address(this).balance);
+            revert InsufficientFundsForLayerZero(
+                fee.nativeFee,
+                address(this).balance
+            );
         }
-        
+
         _lzSend(
             foreignEid,
             message,
@@ -311,7 +359,7 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
     ) internal {
         require(_questionID != bytes32(0), "Question ID cannot be empty");
         require(_requester != address(0), "Requester cannot be zero address");
-        
+
         Request storage request = requests[_questionID][_requester];
         require(
             request.status == Status.AwaitingRuling,
@@ -346,10 +394,10 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
         bytes32 _answer
     ) internal {
         require(_questionID != bytes32(0), "Question ID cannot be empty");
-        
+
         address requester = questionIDToRequester[_questionID];
         require(requester != address(0), "No requester found for question");
-        
+
         Request storage request = requests[_questionID][requester];
         require(
             request.status == Status.AwaitingRuling,

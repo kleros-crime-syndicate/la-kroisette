@@ -6,6 +6,7 @@ import {IArbitrableV2, IArbitratorV2} from "@kleros/kleros-v2-contracts/arbitrat
 import {IDisputeTemplateRegistry} from "@kleros/kleros-v2-contracts/arbitration/interfaces/IDisputeTemplateRegistry.sol";
 import {OApp, Origin, MessagingFee} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
 import {OAppOptionsType3} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OAppOptionsType3.sol";
+import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IForeignArbitrationProxy} from "./interfaces/IArbitrationProxies.sol";
 import {SafeSend} from "./libraries/SafeSend.sol";
@@ -486,7 +487,11 @@ contract RealitioForeignProxyLZ is
         bytes32 _questionID,
         uint256 _maxPrevious
     ) internal {
-        bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(300000)); // Set gas limit to 300,000 for arbitration request processing
+        bytes memory gasOptions = OptionsBuilder.addExecutorLzReceiveOption(
+            OptionsBuilder.newOptions(),
+            1000000,
+            0
+        );
         _requestArbitration(_questionID, _maxPrevious, gasOptions);
     }
 
@@ -556,7 +561,11 @@ contract RealitioForeignProxyLZ is
         bytes32 _questionID,
         address _requester
     ) internal {
-        bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(200000)); // Set gas limit to 200,000 for arbitration failure processing
+        bytes memory gasOptions = OptionsBuilder.addExecutorLzReceiveOption(
+            OptionsBuilder.newOptions(),
+            1000000,
+            0
+        );
         _handleFailedDisputeCreation(_questionID, _requester, gasOptions);
     }
 
@@ -620,7 +629,11 @@ contract RealitioForeignProxyLZ is
     }
 
     function _relayRule(bytes32 _questionID, address _requester) internal {
-        bytes memory gasOptions = abi.encodePacked(uint16(1), uint128(250000)); // Set gas limit to 250,000 for arbitration answer processing
+        bytes memory gasOptions = OptionsBuilder.addExecutorLzReceiveOption(
+            OptionsBuilder.newOptions(),
+            1000000,
+            0
+        );
         _relayRule(_questionID, _requester, gasOptions);
     }
 
