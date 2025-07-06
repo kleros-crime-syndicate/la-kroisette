@@ -278,6 +278,11 @@ contract RealitioHomeProxyLZ is OApp, OAppOptionsType3, IHomeArbitrationProxy {
         emit RequestAcknowledged(_questionID, _requester);
     }
 
+    function _payNative(uint256 _nativeFee) internal override returns (uint256 nativeFee) {
+        if (address(this).balance < _nativeFee) revert NotEnoughNative(address(this).balance);
+        return _nativeFee;
+    }
+
     /**
      * @notice Handles arbitration request after it has been rejected.
      * @dev This method exists because `receiveArbitrationRequest` is called by the AMB and cannot send messages back to it.

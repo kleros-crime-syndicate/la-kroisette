@@ -557,6 +557,11 @@ contract RealitioForeignProxyLZ is
         emit ArbitrationRequested(_questionID, msg.sender, _maxPrevious);
     }
 
+    function _payNative(uint256 _nativeFee) internal override returns (uint256 nativeFee) {
+        if (address(this).balance < _nativeFee) revert NotEnoughNative(address(this).balance);
+        return _nativeFee;
+    }
+
     function _handleFailedDisputeCreation(
         bytes32 _questionID,
         address _requester
